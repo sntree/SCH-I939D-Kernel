@@ -83,7 +83,6 @@ deps_config := \
 	fs/ext3/Kconfig \
 	fs/ext2/Kconfig \
 	fs/Kconfig \
-	drivers/j4fs/Kconfig \
 	drivers/interceptor/Kconfig \
 	drivers/felica/Kconfig \
 	drivers/iommu/Kconfig \
@@ -104,6 +103,7 @@ deps_config := \
 	drivers/clk/Kconfig \
 	drivers/platform/x86/Kconfig \
 	drivers/platform/Kconfig \
+	drivers/staging/cpupower/Kconfig \
 	drivers/staging/nvec/Kconfig \
 	drivers/staging/mei/Kconfig \
 	drivers/staging/altera-stapl/Kconfig \
@@ -138,6 +138,8 @@ deps_config := \
 	drivers/staging/wlags49_h2/Kconfig \
 	drivers/staging/zcache/Kconfig \
 	drivers/staging/zram/Kconfig \
+	drivers/staging/lz4/Kconfig \
+	drivers/staging/snappy/Kconfig \
 	drivers/staging/cs5535_gpio/Kconfig \
 	drivers/staging/iio/trigger/Kconfig \
 	drivers/staging/iio/resolver/Kconfig \

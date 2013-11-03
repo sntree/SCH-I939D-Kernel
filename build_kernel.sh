@@ -59,7 +59,7 @@ nice -n 10 make -j3 zImage || exit 1
 $KERNELDIR/mkshbootimg.py $KERNELDIR/boot.img $KERNELDIR/boot.img.pre $KERNELDIR/payload.tar
 rm -f $KERNELDIR/boot.img.pre
 
-tar -H ustar -c boot.img > boot.tar
+tar -H ustar -c boot.img recovery.img > boot.tar
 md5sum -t boot.tar >> boot.tar
 mv boot.tar boot.tar.md5
 
