@@ -350,8 +350,8 @@ CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
 CFLAGS_MODULE   =
 AFLAGS_MODULE   =
-LDFLAGS_MODULE  =
-CFLAGS_KERNEL	=
+LDFLAGS_MODULE  = --strip-debug
+CFLAGS_KERNEL	= 
 AFLAGS_KERNEL	=
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 
@@ -365,11 +365,25 @@ LINUXINCLUDE    := -I$(srctree)/arch/$(hdr-arch)/include \
 
 KBUILD_CPPFLAGS := -D__KERNEL__
 
+GOOGY_FLAGS   = -funswitch-loops -fpredictive-commoning -fgcse-after-reload \
+        	-fmodulo-sched -fmodulo-sched-allow-regmoves \
+        	-fipa-cp-clone -pipe \
+		-munaligned-access
+#		-ftree-loop-distribution -floop-parallelize-all -ftree-parallelize-loops=4
+#		 -ffast-math -fno-pic
+#	 	-fgraphite-identity -fsched-spec-load \
+#	 	-floop-interchange -floop-strip-mine -floop-block \
+#	 	-fpredictive-commoning -fgcse-after-reload -ftree-vectorize -fipa-cp-clone \
+#	 	-fmodulo-sched -fmodulo-sched-allow-regmoves
+# 4.8		-fno-inline-functions 
+
 KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common \
 		   -Werror-implicit-function-declaration \
-		   -Wno-format-security \
-		   -fno-delete-null-pointer-checks
+		   -Wno-format-security -Wno-array-bounds \
+		   -fno-delete-null-pointer-checks \
+		   -mtune=cortex-a9 -march=armv7-a -mcpu=cortex-a9 -mfpu=neon -marm $(GOOGY_FLAGS)
+
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
 KBUILD_AFLAGS   := -D__ASSEMBLY__
@@ -566,12 +580,14 @@ KBUILD_CFLAGS	+= -O2
 endif
 
 ifdef CONFIG_CC_CHECK_WARNING_STRICTLY
-KBUILD_CFLAGS	+= -fdiagnostics-show-option -Werror \
+KBUILD_CFLAGS	+= -fdiagnostics-show-option \
 		   -Wno-error=unused-function \
 		   -Wno-error=unused-variable \
 		   -Wno-error=unused-value \
 		   -Wno-error=unused-label
 endif
+
+# GGY says Here was KBUILD_CFLAGS	+= -fdiagnostics-show-option
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
 

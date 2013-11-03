@@ -1,9 +1,10 @@
 #!/bin/sh
 export KERNELDIR=`readlink -f .`
-export RAMFS_SOURCE=`readlink -f $KERNELDIR/SCH-I939D-Ramfs`
+export RAMFS_SOURCE=`readlink -f $KERNELDIR/../SCH-I939D-Ramfs`
 export PARENT_DIR=`readlink -f ..`
 export USE_SEC_FIPS_MODE=true
-export CROSS_COMPILE=$PARENT_DIR/android_prebuilt/linux-x86/toolchain/arm-eabi-4.4.3/bin/arm-eabi-
+#export CROSS_COMPILE=$PARENT_DIR/android_prebuilt/linux-x86/toolchain/arm-eabi-4.4.3/bin/arm-eabi-
+export CROSS_COMPILE=$PARENT_DIR/toolchains/arm-cortex_a8-linux-gnueabi-linaro_4.7.4-2013.10/bin/arm-cortex_a8-linux-gnueabi-
 
 if [ "${1}" != "" ];then
   export KERNELDIR=`readlink -f ${1}`
@@ -31,6 +32,8 @@ rm -rf $RAMFS_TMP.cpio.gz
 cp -ax $RAMFS_SOURCE $RAMFS_TMP
 #clear git repositories in ramfs
 find $RAMFS_TMP -name .git -exec rm -rf {} \;
+#remove orig backup files
+find $RAMFS_TMP -name *.orig -exec rm -rf {} \;
 #remove empty directory placeholders
 find $RAMFS_TMP -name EMPTY_DIRECTORY -exec rm -rf {} \;
 rm -rf $RAMFS_TMP/tmp/*
@@ -38,8 +41,8 @@ rm -rf $RAMFS_TMP/tmp/*
 rm -rf $RAMFS_TMP/.hg
 #copy modules into ramfs
 mkdir -p $INITRAMFS/lib/modules
-mv -f drivers/media/video/samsung/mali_r3p0_lsi/mali.ko drivers/media/video/samsung/mali_r3p0_lsi/mali_r3p0_lsi.ko
-mv -f drivers/net/wireless/bcmdhd.cm/dhd.ko drivers/net/wireless/bcmdhd.cm/dhd_cm.ko
+#mv -f drivers/media/video/samsung/mali_r3p0_lsi/mali.ko drivers/media/video/samsung/mali_r3p0_lsi/mali_r3p0_lsi.ko
+#mv -f drivers/net/wireless/bcmdhd.cm/dhd.ko drivers/net/wireless/bcmdhd.cm/dhd_cm.ko
 find -name '*.ko' -exec cp -av {} $RAMFS_TMP/lib/modules/ \;
 ${CROSS_COMPILE}strip --strip-unneeded $RAMFS_TMP/lib/modules/*
 
