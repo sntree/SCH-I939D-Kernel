@@ -103,3 +103,9 @@ mke2fs  -F -v -m0 rdimg/ramdisk
 9. 使用mkimage工具
     mkimage  -n "uboot.ramdisk.filesys" -A arm -O linux -T ramdisk -C gzip  -d ramdisk.gz  uboot.ramdisk.gz
 
+
+
+tar -H ustar -c image_1 image_2 > your_odin_package.tar
+md5sum -t your_odin_package.tar >> your_odin_package.tar
+mv your_odin_package.tar your_odin_package.tar.md5
+
