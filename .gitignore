@@ -16,3 +16,7 @@
 *.exe
 *.out
 *.app
+modules.builtin
+*.o.cmd
+modules.order
+.*
