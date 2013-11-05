@@ -58,6 +58,7 @@ deps_config := \
 	fs/sysfs/Kconfig \
 	fs/proc/Kconfig \
 	fs/ntfs/Kconfig \
+	fs/exfat/Kconfig \
 	fs/fat/Kconfig \
 	fs/udf/Kconfig \
 	fs/isofs/Kconfig \
@@ -83,7 +84,6 @@ deps_config := \
 	fs/ext3/Kconfig \
 	fs/ext2/Kconfig \
 	fs/Kconfig \
-	drivers/j4fs/Kconfig \
 	drivers/interceptor/Kconfig \
 	drivers/felica/Kconfig \
 	drivers/iommu/Kconfig \
@@ -138,6 +138,7 @@ deps_config := \
 	drivers/staging/wlags49_h2/Kconfig \
 	drivers/staging/zcache/Kconfig \
 	drivers/staging/zram/Kconfig \
+	drivers/staging/lz4/Kconfig \
 	drivers/staging/cs5535_gpio/Kconfig \
 	drivers/staging/iio/trigger/Kconfig \
 	drivers/staging/iio/resolver/Kconfig \
@@ -305,7 +306,6 @@ deps_config := \
 	drivers/video/samsung_duallcd/Kconfig \
 	drivers/video/samsung_extdisp/Kconfig \
 	drivers/video/samsung/Kconfig \
-	drivers/gpu/vithar/Kconfig \
 	drivers/gpu/ion/Kconfig \
 	drivers/gpu/stub/Kconfig \
 	drivers/gpu/drm/udl/Kconfig \
@@ -353,6 +353,9 @@ deps_config := \
 	drivers/media/video/samsung/fimg2d3x-exynos4/Kconfig \
 	drivers/media/video/samsung/fimg2d4x/Kconfig \
 	drivers/media/video/samsung/fimg2d3x/Kconfig \
+	drivers/media/video/samsung/mali/Kconfig \
+	drivers/media/video/samsung/mali_r3p0_lsi/Kconfig \
+	drivers/media/video/samsung/ump_r3p0_lsi/Kconfig \
 	drivers/media/video/samsung/mfc5x/Kconfig \
 	drivers/media/video/samsung/tvout/Kconfig \
 	drivers/media/video/samsung/fimc/Kconfig \
@@ -461,7 +464,6 @@ deps_config := \
 	drivers/net/wimax/i2400m/Kconfig \
 	drivers/net/wimax/Kconfig \
 	drivers/net/wimax_cmc/Kconfig \
-	drivers/net/wireless/mwlan_aarp/Kconfig \
 	drivers/net/wireless/mwifiex/Kconfig \
 	drivers/net/wireless/zd1211rw/Kconfig \
 	drivers/net/wireless/wl12xx/Kconfig \
@@ -744,7 +746,7 @@ deps_config := \
 include/config/auto.conf: \
 	$(deps_config)
 
-ifneq "$(KERNELVERSION)" "3.0.31"
+ifneq "$(KERNELVERSION)" "3.0.101"
 include/config/auto.conf: FORCE
 endif
 ifneq "$(ARCH)" "arm"

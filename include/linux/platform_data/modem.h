@@ -104,6 +104,7 @@ struct modem_io_t {
 	enum modem_io io_type;
 	enum modem_link links;
 	enum modem_link tx_link;
+	bool rx_gather;	
 	char *app;
 };
 
@@ -211,6 +212,18 @@ struct dpram_ipc_map {
 };
 
 struct modemlink_dpram_control {
+	void (*reset)(void);
+	void (*clear_intr)(void);
+	u16 (*recv_intr)(void);
+	void (*send_intr)(u16);
+	u16 (*recv_msg)(void);
+	void (*send_msg)(u16);
+
+	int (*wakeup)(void);
+	void (*sleep)(void);
+
+	void (*setup_speed)(enum dpram_speed);
+
 	enum dpram_type dp_type;	/* DPRAM type */
 	int aligned;			/* Aligned access is required */
 	bool disabled;			/* Disabled during phone booting */
@@ -227,8 +240,6 @@ struct modemlink_dpram_control {
 	unsigned boot_tag_offset;
 	unsigned boot_count_offset;
 	unsigned max_boot_frame_size;
-
-	void (*setup_speed)(enum dpram_speed);
 };
 
 /* platform data */

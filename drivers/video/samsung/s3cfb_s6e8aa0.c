@@ -148,6 +148,8 @@ extern bool s3cfb_esd_detected;
 static bool probe_value = false;
 static int oled_det_cnt = 0;
 static int s6e8ax0_read_ddi_status_reg(struct lcd_info *lcd, u8 *buf);
+
+extern void s3cfb_reinitialize_lcd(void);
 #endif
 #ifdef CONFIG_AID_DIMMING
 static const unsigned int candela_table[GAMMA_MAX] = {

@@ -40,6 +40,9 @@
 #include "wm8994.h"
 #include "wm_hubs.h"
 
+#include "boeffla_sound.h"
+
+
 #define WM1811_JACKDET_MODE_NONE  0x0000
 #define WM1811_JACKDET_MODE_JACK  0x0100
 #define WM1811_JACKDET_MODE_MIC   0x0080
@@ -199,6 +202,8 @@ static int wm8994_write(struct snd_soc_codec *codec, unsigned int reg,
 	int ret;
 
 	BUG_ON(reg > WM8994_MAX_REGISTER);
+
+	value = Boeffla_sound_hook_wm8994_write(reg, value);
 
 	if (!wm8994_volatile(codec, reg)) {
 		ret = snd_soc_cache_write(codec, reg, value);
@@ -2889,6 +2894,7 @@ static int wm8994_aif3_hw_params(struct snd_pcm_substream *substream,
 		default:
 			return 0;
 		}
+		break;
 	default:
 		return 0;
 	}
@@ -3122,9 +3128,6 @@ static int wm8994_codec_resume(struct snd_soc_codec *codec)
 		/* force a HW read */
 		val = wm8994_reg_read(codec->control_data,
 				      WM8994_POWER_MANAGEMENT_5);
-		if (val < 0)
-			dev_err(codec->dev, "[%s]Failed to read PM5 ret[%d]\n",
-					__func__, val);
 
 		/* modify the cache only */
 		codec->cache_only = 1;
@@ -4216,6 +4219,8 @@ static int wm8994_codec_probe(struct snd_soc_codec *codec)
 					ARRAY_SIZE(wm8958_intercon));
 		break;
 	}
+
+	Boeffla_sound_hook_wm8994_pcm_probe(codec);
 
 	return 0;
 

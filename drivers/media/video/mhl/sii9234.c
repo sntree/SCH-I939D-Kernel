@@ -131,7 +131,7 @@ static struct mutex sii9234_irq_lock;
 int en_irq;
 #	define sii9234_enable_irq() \
 	do { \
-		mutex_lock(&sii9234_irq_lock); \
+		sii9234_mutex_lock(&sii9234_irq_lock); \
 		if (atomic_read(&sii9234->is_irq_enabled) == false) { \
 			atomic_set(&sii9234->is_irq_enabled, true); \
 			enable_irq(sii9234->pdata->mhl_tx_client->irq); \
@@ -141,12 +141,12 @@ int en_irq;
 			printk(KERN_INFO"%s() : irq is already enabled(%d)\n" \
 					, __func__, en_irq); \
 		} \
-		mutex_unlock(&sii9234_irq_lock); \
+		sii9234_mutex_unlock(&sii9234_irq_lock); \
 	} while (0)
 
 #	define sii9234_disable_irq() \
 	do { \
-		mutex_lock(&sii9234_irq_lock); \
+		sii9234_mutex_lock(&sii9234_irq_lock); \
 		if (atomic_read(&sii9234->is_irq_enabled) == true) { \
 			atomic_set(&sii9234->is_irq_enabled, false); \
 			disable_irq_nosync(sii9234->pdata->mhl_tx_client->irq);\
@@ -156,27 +156,27 @@ int en_irq;
 			printk(KERN_INFO"%s() : irq is already disabled(%d)\n"\
 					, __func__, en_irq); \
 		} \
-		mutex_unlock(&sii9234_irq_lock); \
+		sii9234_mutex_unlock(&sii9234_irq_lock); \
 	} while (0)
 #else
 #	define sii9234_enable_irq() \
 	do { \
-		mutex_lock(&sii9234_irq_lock); \
+		sii9234_mutex_lock(&sii9234_irq_lock); \
 		if (atomic_read(&sii9234->is_irq_enabled) == false) { \
 			atomic_set(&sii9234->is_irq_enabled, true); \
 			enable_irq(sii9234->pdata->mhl_tx_client->irq); \
 		} \
-		mutex_unlock(&sii9234_irq_lock); \
+		sii9234_mutex_unlock(&sii9234_irq_lock); \
 	} while (0)
 
 #	define sii9234_disable_irq() \
 	do { \
-		mutex_lock(&sii9234_irq_lock); \
+		sii9234_mutex_lock(&sii9234_irq_lock); \
 		if (atomic_read(&sii9234->is_irq_enabled) == true) { \
 			atomic_set(&sii9234->is_irq_enabled, false); \
 			disable_irq_nosync(sii9234->pdata->mhl_tx_client->irq);\
 		} \
-		mutex_unlock(&sii9234_irq_lock); \
+		sii9234_mutex_unlock(&sii9234_irq_lock); \
 	} while (0)
 #endif /*__SII9234_IRQ_DEBUG__*/
 

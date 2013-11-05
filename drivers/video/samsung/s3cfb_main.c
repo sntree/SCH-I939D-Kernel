@@ -66,6 +66,10 @@ struct s3cfb_fimd_desc		*fbfimd;
 #ifdef CONFIG_FB_S5P_PREVENTESD
 struct mutex	s3cfb_lock;
 bool s3cfb_esd_detected = false;
+
+extern void s6e8ax0_early_suspend(void);
+extern void s6e8ax0_late_resume(void);
+extern int s5p_dsim_fifo_clear_ext(void);
 #endif
 struct s3cfb_global *get_fimd_global(int id)
 {
@@ -1036,6 +1040,7 @@ void s3cfb_late_resume(struct early_suspend *h)
 		s5c1372_ldi_enable();
 #endif
 		s3c_mdnie_init_global(fbdev[i]);
+		set_mdnie_value(g_mdnie, 1);
 		s3c_mdnie_display_on(fbdev[i]);
 #endif
 		s3cfb_display_on(fbdev[i]);

@@ -24,6 +24,9 @@
 
 #define CPUFREQ_NAME_LEN 16
 
+/* CPU UV DEFINES */
+#define CPU_UV_MV_MAX 1500000
+#define CPU_UV_MV_MIN 600000
 
 /*********************************************************************
  *                     CPUFREQ NOTIFIER INTERFACE                    *
@@ -342,6 +345,9 @@ static inline int cpufreq_ondemand_flexrate_request(unsigned int rate_ms,
 }
 #endif
 
+#ifdef CONFIG_CPU_FREQ_LCD_FREQ_DFS
+extern int _lcdfreq_lock(int lock);
+#endif
 
 /*********************************************************************
  *                       CPUFREQ DEFAULT GOVERNOR                    *
@@ -369,6 +375,9 @@ extern struct cpufreq_governor cpufreq_gov_ondemand;
 #elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_CONSERVATIVE)
 extern struct cpufreq_governor cpufreq_gov_conservative;
 #define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_conservative)
+#elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_ZZMOOVE)
+extern struct cpufreq_governor cpufreq_gov_zzmoove;
+#define CPUFREQ_DEFAULT_GOVERNOR       (&cpufreq_gov_zzmoove)
 #elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_INTERACTIVE)
 extern struct cpufreq_governor cpufreq_gov_interactive;
 #define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_interactive)
@@ -421,3 +430,7 @@ void cpufreq_frequency_table_put_attr(unsigned int cpu);
 
 
 #endif /* _LINUX_CPUFREQ_H */
+
+#define SCALING_MAX_COUPLED 1
+#define SCALING_MAX_UNDEFINED 0
+#define SCALING_MAX_UNCOUPLED -1

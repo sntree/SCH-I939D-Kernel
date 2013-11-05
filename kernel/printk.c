@@ -41,6 +41,7 @@
 #include <linux/cpu.h>
 #include <linux/notifier.h>
 #include <linux/rculist.h>
+#include "printk_interface.h"
 
 #include <asm/uaccess.h>
 #include <mach/sec_debug.h>
@@ -684,8 +685,19 @@ static void call_console_drivers(unsigned start, unsigned end)
 	start_print = start;
 	while (cur_index != end) {
 		if (msg_level < 0 && ((end - cur_index) > 2)) {
+			/*
+			 * prepare buf_prefix, as a contiguous array,
+			 * to be processed by log_prefix function
+			 */
+			char buf_prefix[SYSLOG_PRI_MAX_LENGTH+1];
+			unsigned i;
+			for (i = 0; i < ((end - cur_index)) && (i < SYSLOG_PRI_MAX_LENGTH); i++) {
+				buf_prefix[i] = LOG_BUF(cur_index + i);
+			}
+			buf_prefix[i] = '\0'; /* force '\0' as last string character */
+
 			/* strip log prefix */
-			cur_index += log_prefix(&LOG_BUF(cur_index), &msg_level, NULL);
+			cur_index += log_prefix((const char *)&buf_prefix, &msg_level, NULL);
 			start_print = cur_index;
 		}
 		while (cur_index != end) {
@@ -832,6 +844,12 @@ asmlinkage int printk(const char *fmt, ...)
 	va_list args;
 	int r;
 
+	// if printk mode is disabled, terminate instantly
+	if (printk_mode == 0)
+	{
+		return 0;
+	}
+
 #ifdef CONFIG_KGDB_KDB
 	if (unlikely(kdb_trap_printk)) {
 		va_start(args, fmt);
@@ -926,6 +944,12 @@ asmlinkage int vprintk(const char *fmt, va_list args)
 	char *p;
 	size_t plen;
 	char special;
+
+        // if printk mode is disabled, terminate instantly
+        if (printk_mode == 0)
+        {
+                return 0;
+        }
 
 	boot_delay_msec();
 	printk_delay();

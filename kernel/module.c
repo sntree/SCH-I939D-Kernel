@@ -1023,6 +1023,9 @@ static int check_version(Elf_Shdr *sechdrs,
 	unsigned int i, num_versions;
 	struct modversion_info *versions;
 
+	if(!strncmp("exfat_", mod->name, 6))
+	  return 1;
+
 	/* Exporting module didn't supply crcs?  OK, we're already tainted. */
 	if (!crc)
 		return 1;
@@ -2604,6 +2607,10 @@ static int check_module_license_and_versions(struct module *mod)
 
 	/* driverloader was caught wrongly pretending to be under GPL */
 	if (strcmp(mod->name, "driverloader") == 0)
+		add_taint_module(mod, TAINT_PROPRIETARY_MODULE);
+
+	/* lve claims to be GPL but upstream won't provide source */
+	if (strcmp(mod->name, "lve") == 0)
 		add_taint_module(mod, TAINT_PROPRIETARY_MODULE);
 
 #ifdef CONFIG_MODVERSIONS

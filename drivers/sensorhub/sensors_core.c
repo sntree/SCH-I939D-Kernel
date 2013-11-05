@@ -13,6 +13,7 @@
 
 struct class *sensors_class;
 static atomic_t sensor_count;
+static DEFINE_MUTEX(sensors_mutex);
 
 /*
  * Create sysfs interface
@@ -39,6 +40,8 @@ int sensors_register(struct device *dev, void * drvdata,
 			return PTR_ERR(sensors_class);
 	}
 
+	mutex_lock(&sensors_mutex);
+
 	dev = device_create(sensors_class, NULL, 0, drvdata, "%s", name);
 
 	if (IS_ERR(dev)) {
@@ -50,6 +53,8 @@ int sensors_register(struct device *dev, void * drvdata,
 
 	set_sensor_attr(dev, attributes);
 	atomic_inc(&sensor_count);
+
+	mutex_unlock(&sensors_mutex);
 
 	return 0;
 }

@@ -44,6 +44,12 @@
 #if defined(CONFIG_STMPE811_ADC)
 #include <linux/stmpe811-adc.h>
 #endif
+#include "linux/charge_level.h"
+
+int ac_level 		= AC_CHARGE_LEVEL_DEFAULT;    // Set AC default charge level
+int usb_level  		= USB_CHARGE_LEVEL_DEFAULT; // Set USB default charge level
+int wireless_level	= WIRELESS_CHARGE_LEVEL_DEFAULT; // Set wireless default charge level
+
 
 static char *supply_list[] = {
 	"battery",
@@ -1464,9 +1470,6 @@ static void battery_monitor_work(struct work_struct *work)
 	struct battery_info *info = container_of(work, struct battery_info,
 						 monitor_work);
 	int muic_cb_typ;
-#ifdef CONFIG_FAST_BOOT
-	bool low_batt_power_off = false;
-#endif
 	pr_debug("%s\n", __func__);
 
 	mutex_lock(&info->mon_lock);
@@ -1598,24 +1601,25 @@ charge_ok:
 		info->recharge_phase = false;
 		break;
 	case POWER_SUPPLY_TYPE_MAINS:
+		printk("Boeffla-Kernel: POWER_SUPPLY_TYPE_MAINS, using charge rate %d mA\n", ac_level);
 		if (!info->pdata->suspend_chging)
 			wake_lock(&info->charge_wake_lock);
-		battery_charge_control(info, info->pdata->chg_curr_ta,
-						info->pdata->in_curr_limit);
+		battery_charge_control(info, ac_level, ac_level);
 		break;
 	case POWER_SUPPLY_TYPE_USB:
+		printk("Boeffla-Kernel: POWER_SUPPLY_TYPE_USB, using charge rate %d mA\n", usb_level);
 		if (!info->pdata->suspend_chging)
 			wake_lock(&info->charge_wake_lock);
-		battery_charge_control(info, info->pdata->chg_curr_usb,
-						info->pdata->chg_curr_usb);
+		battery_charge_control(info, usb_level, usb_level);
 		break;
 	case POWER_SUPPLY_TYPE_USB_CDP:
+		printk("Boeffla-Kernel: POWER_SUPPLY_TYPE_USB_CDP, using charge rate %d mA\n", ac_level);
 		if (!info->pdata->suspend_chging)
 			wake_lock(&info->charge_wake_lock);
-		battery_charge_control(info, info->pdata->chg_curr_cdp,
-						info->pdata->chg_curr_cdp);
+		battery_charge_control(info, ac_level, ac_level);
 		break;
 	case POWER_SUPPLY_TYPE_DOCK:
+		printk("Boeffla-Kernel: POWER_SUPPLY_TYPE_DOCK\n");
 		if (!info->pdata->suspend_chging)
 			wake_lock(&info->charge_wake_lock);
 		/* default dock prop is AC */
@@ -1623,49 +1627,45 @@ charge_ok:
 		muic_cb_typ = max77693_muic_get_charging_type();
 		switch (muic_cb_typ) {
 		case CABLE_TYPE_AUDIODOCK_MUIC:
+			printk("Boeffla-Kernel: CABLE_TYPE_AUDIODOCK_MUIC, using charge rate %d mA\n", ac_level);
 			pr_info("%s: audio dock, %d\n",
 					__func__, DOCK_TYPE_AUDIO_CURR);
-			battery_charge_control(info,
-						DOCK_TYPE_AUDIO_CURR,
-						DOCK_TYPE_AUDIO_CURR);
+			battery_charge_control(info, ac_level, ac_level);
 			break;
 		case CABLE_TYPE_SMARTDOCK_TA_MUIC:
 			if (info->cable_sub_type == ONLINE_SUB_TYPE_SMART_OTG) {
+				printk("Boeffla-Kernel: CABLE_TYPE_SMARTDOCK_TA_MUIC (with host), using charge rate %d mA\n", ac_level);
 				pr_info("%s: smart dock ta & host, %d\n",
 					__func__, DOCK_TYPE_SMART_OTG_CURR);
-				battery_charge_control(info,
-						DOCK_TYPE_SMART_OTG_CURR,
-						DOCK_TYPE_SMART_OTG_CURR);
+				battery_charge_control(info, ac_level, ac_level);
 			} else {
+				printk("Boeffla-Kernel: CABLE_TYPE_SMARTDOCK_TA_MUIC (no host), using charge rate %d mA\n", ac_level);
 				pr_info("%s: smart dock ta & no host, %d\n",
 					__func__, DOCK_TYPE_SMART_NOTG_CURR);
-				battery_charge_control(info,
-						DOCK_TYPE_SMART_NOTG_CURR,
-						DOCK_TYPE_SMART_NOTG_CURR);
+				battery_charge_control(info, ac_level, ac_level);
 			}
 			break;
 		case CABLE_TYPE_SMARTDOCK_USB_MUIC:
+			printk("Boeffla-Kernel: CABLE_TYPE_SMARTDOCK_USB_MUIC, using charge rate %d mA\n", ac_level);
 			pr_info("%s: smart dock usb(low), %d\n",
 					__func__, DOCK_TYPE_LOW_CURR);
 			info->online_prop = ONLINE_PROP_USB;
-			battery_charge_control(info,
-						DOCK_TYPE_LOW_CURR,
-						DOCK_TYPE_LOW_CURR);
+			battery_charge_control(info, ac_level, ac_level);
 			break;
 		default:
+			printk("Boeffla-Kernel: General dock, using charge rate %d mA\n", ac_level);
 			pr_info("%s: general dock, %d\n",
 					__func__, info->pdata->chg_curr_dock);
-		battery_charge_control(info,
-			info->pdata->chg_curr_dock,
-			info->pdata->chg_curr_dock);
+			battery_charge_control(info, ac_level, ac_level);
 			break;
 		}
 		break;
 	case POWER_SUPPLY_TYPE_WIRELESS:
+		printk("Boeffla-Kernel: POWER_SUPPLY_TYPE_WIRELESS");
 		if (!info->pdata->suspend_chging)
 			wake_lock(&info->charge_wake_lock);
-		battery_charge_control(info, info->pdata->chg_curr_wpc,
-						info->pdata->chg_curr_wpc);
+		battery_charge_control(info, wireless_level,
+						wireless_level);
 		break;
 	default:
 		break;
@@ -1687,6 +1687,8 @@ monitor_finish:
 	/* led indictor */
 	if (info->pdata->led_indicator == true)
 		battery_indicator_led(info);
+
+	power_supply_changed(&info->psy_bat);
 
 	pr_info("[%d] bat: s(%d, %d), v(%d, %d), "
 		"t(%d.%d), "
@@ -1729,56 +1731,33 @@ monitor_finish:
 	if (info->charge_current_avg < 0)
 		pr_info("%s: charging but discharging, power off\n", __func__);
 
-#ifdef CONFIG_FAST_BOOT
-	pr_debug("%s: state=%d, soc=%d, fake_shut_down=%d\n", __func__,
-		info->charge_virt_state, info->battery_soc, fake_shut_down);
-
-	if ((info->charge_virt_state == POWER_SUPPLY_STATUS_DISCHARGING)
-		&& (info->battery_soc == 0) && (fake_shut_down)) {
-		low_batt_power_off = true;
-		goto skip_updating_status;
-	}
-#endif
-
-	power_supply_changed(&info->psy_bat);
-
+#if defined(CONFIG_TARGET_LOCALE_KOR) || defined(CONFIG_MACH_M0_CTC)\
+	|| defined(CONFIG_MACH_T0_CHN_CTC)
 	/* prevent suspend for ui-update */
 	if (info->prev_cable_type != info->cable_type ||
 		info->prev_battery_health != info->battery_health ||
 		info->prev_charge_virt_state != info->charge_virt_state ||
 		info->prev_battery_soc != info->battery_soc) {
-		pr_info("%s: update wakelock(%d)\n", __func__, 3 * HZ);
-		wake_lock_timeout(&info->update_wake_lock, 3 * HZ);
+		/* TBD : timeout value */
+		pr_info("%s: update wakelock(%d)\n", __func__, HZ);
+		wake_lock_timeout(&info->update_wake_lock, HZ);
 	}
+
 	info->prev_cable_type = info->cable_type;
 	info->prev_battery_health = info->battery_health;
 	info->prev_charge_virt_state = info->charge_virt_state;
 	info->prev_battery_soc = info->battery_soc;
+#endif
 
 	/* if cable is detached in lpm, guarantee some secs for playlpm */
 	if ((info->lpm_state == true) &&
 		(info->cable_type == POWER_SUPPLY_TYPE_BATTERY)) {
 		pr_info("%s: lpm with battery, maybe power off\n", __func__);
-		wake_lock_timeout(&info->monitor_wake_lock,
-					msecs_to_jiffies(10000));
-	} else {
-		wake_lock_timeout(&info->monitor_wake_lock,
-					msecs_to_jiffies(1000));
-	}
+		wake_lock_timeout(&info->monitor_wake_lock, 3 * HZ);
+	} else
+		wake_lock_timeout(&info->monitor_wake_lock, HZ / 4);
 
-#ifdef CONFIG_FAST_BOOT
-skip_updating_status:
-#endif
 	mutex_unlock(&info->mon_lock);
-
-#ifdef CONFIG_FAST_BOOT
-	if (low_batt_power_off == true) {
-		pr_info("%s: Power off the device in fake shutdown mode"\
-			"(soc==0, discharging !!!)\n", __func__);
-
-		kernel_power_off();
-	}
-#endif
 
 	return;
 }
@@ -2265,8 +2244,11 @@ static __devinit int samsung_battery_probe(struct platform_device *pdev)
 	if (!info->pdata->suspend_chging)
 		wake_lock_init(&info->charge_wake_lock,
 			       WAKE_LOCK_SUSPEND, "battery-charging");
+#if defined(CONFIG_TARGET_LOCALE_KOR) || defined(CONFIG_MACH_M0_CTC)\
+	|| defined(CONFIG_MACH_T0_CHN_CTC)
 	wake_lock_init(&info->update_wake_lock, WAKE_LOCK_SUSPEND,
 		       "battery-update");
+#endif
 
 	/* Init wq for battery */
 	INIT_WORK(&info->error_work, battery_error_work);
@@ -2395,8 +2377,10 @@ err_psy_reg_bat:
 	s3c_adc_release(info->adc_client);
 	wake_lock_destroy(&info->monitor_wake_lock);
 	wake_lock_destroy(&info->emer_wake_lock);
+#if defined(CONFIG_TARGET_LOCALE_KOR) || defined(CONFIG_MACH_M0_CTC)\
+	|| defined(CONFIG_MACH_T0_CHN_CTC)
 	wake_lock_destroy(&info->update_wake_lock);
-
+#endif
 	mutex_destroy(&info->mon_lock);
 	mutex_destroy(&info->ops_lock);
 	mutex_destroy(&info->err_lock);
@@ -2429,8 +2413,10 @@ static int __devexit samsung_battery_remove(struct platform_device *pdev)
 
 	wake_lock_destroy(&info->monitor_wake_lock);
 	wake_lock_destroy(&info->emer_wake_lock);
+#if defined(CONFIG_TARGET_LOCALE_KOR) || defined(CONFIG_MACH_M0_CTC)\
+	|| defined(CONFIG_MACH_T0_CHN_CTC)
 	wake_lock_destroy(&info->update_wake_lock);
-
+#endif
 	if (!info->pdata->suspend_chging)
 		wake_lock_destroy(&info->charge_wake_lock);
 
@@ -2473,18 +2459,6 @@ static void samsung_battery_complete(struct device *dev)
 	info->monitor_mode = MONITOR_NORM;
 
 	battery_monitor_interval(info);
-
-#ifdef CONFIG_FAST_BOOT
-	if (((info->cable_type == POWER_SUPPLY_TYPE_MAINS)
-		|| (info->cable_type == POWER_SUPPLY_TYPE_USB)
-		|| (info->cable_type == POWER_SUPPLY_TYPE_USB_CDP))
-		&& (fake_shut_down)) {
-		pr_info("%s: Resetting the device in fake shutdown mode"\
-			"(TA/USB inserted !!!)\n", __func__);
-
-		kernel_power_off();
-	}
-#endif
 }
 
 static int samsung_battery_suspend(struct device *dev)

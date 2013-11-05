@@ -908,7 +908,6 @@ static void sco_conn_ready(struct sco_conn *conn)
 		if (!conn->hcon) {
 				BT_ERR("conn->hcon = NULL");
 				/* to do */
-				goto done;  //pervent
 		}
 
 		hci_conn_hold(conn->hcon);

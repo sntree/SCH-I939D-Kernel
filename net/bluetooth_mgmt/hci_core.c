@@ -1568,14 +1568,12 @@ static void hci_clear_adv_cache(unsigned long arg)
 	/* to do */
 	BT_DBG("");
 	return;
-//prevent - dead code
-/*
+
 	hci_dev_lock(hdev);
 
 	hci_adv_entries_clear(hdev);
 
 	hci_dev_unlock(hdev);
-*/
 }
 
 int hci_adv_entries_clear(struct hci_dev *hdev)

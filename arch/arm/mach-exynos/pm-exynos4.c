@@ -668,7 +668,7 @@ early_wakeup:
 
 	/* Clear Check mode */
 	__raw_writel(0x0, REG_INFORM1);
-	exynos4_show_wakeup_reason();
+	//exynos4_show_wakeup_reason();
 
 	return;
 }

@@ -61,7 +61,7 @@
 
 static int touchkey_keycode[] = { 0,
 #if defined(TK_USE_4KEY_TYPE_ATT)
-	KEY_MENU, KEY_HOMEPAGE, KEY_BACK, KEY_SEARCH,
+	KEY_MENU, KEY_ENTER, KEY_BACK, KEY_END,
 
 #elif defined(TK_USE_4KEY_TYPE_NA)
 	KEY_SEARCH, KEY_BACK, KEY_HOMEPAGE, KEY_MENU,
@@ -324,7 +324,7 @@ static ssize_t set_touchkey_autocal_testmode(struct device *dev,
 			tkey_i2c->pdata->power_on(1);
 			msleep(50);
 #if defined(TK_HAS_AUTOCAL)
-			touchkey_autocalibration(tkey_i2c);
+			touchkey_autocalibration();
 #endif
 		}
 	} else {
@@ -1257,7 +1257,7 @@ static ssize_t touchkey_back_show(struct device *dev,
 
 	printk(KERN_DEBUG "called %s data[10] = %d, data[11] =%d\n", __func__,
 			data[10], data[11]);
-	back_sensitivity = ((0x00FF & data[10]) << 8) | data[11];
+	back_sensitivity =((0x00FF & data[10]) << 8) | data[11];
 	printk(KERN_DEBUG "called %s back_sensitivity =%d\n", __func__,
 			back_sensitivity);
 #else

@@ -525,6 +525,7 @@ static inline void fimc_irq_cap(struct fimc_control *ctrl)
 	int buf_index;
 	int framecnt_seq;
 	int available_bufnum;
+	static int is_frame_end_irq;
 	struct v4l2_control is_ctrl;
 	u32 is_fn;
 
@@ -547,10 +548,9 @@ static inline void fimc_irq_cap(struct fimc_control *ctrl)
 	}
 
 	if (pdata->hw_ver >= 0x51) {
-		if (ctrl->is_frame_end_irq ||
-			ctrl->status == FIMC_BUFFER_STOP) {
+		if (is_frame_end_irq || ctrl->status == FIMC_BUFFER_STOP) {
 			pp = fimc_hwget_present_frame_count(ctrl);
-			ctrl->is_frame_end_irq = 0;
+			is_frame_end_irq = 0;
 		} else {
 			pp = fimc_hwget_before_frame_count(ctrl);
 		}
@@ -566,7 +566,7 @@ static inline void fimc_irq_cap(struct fimc_control *ctrl)
 			printk(KERN_INFO "%s[%d] SKIPPED\n", __func__, pp);
 			if (ctrl->cap->nr_bufs == 1) {
 				fimc_stop_capture(ctrl);
-				ctrl->is_frame_end_irq = 1;
+				is_frame_end_irq = 1;
 				ctrl->status = FIMC_BUFFER_STOP;
 			}
 			ctrl->restart = false;
@@ -637,7 +637,7 @@ static inline void fimc_irq_cap(struct fimc_control *ctrl)
 			if (available_bufnum == 1) {
 				ctrl->cap->lastirq = 0;
 				fimc_stop_capture(ctrl);
-				ctrl->is_frame_end_irq = 1;
+				is_frame_end_irq = 1;
 
 				printk(KERN_INFO "fimc_irq_cap available_bufnum = %d\n", available_bufnum);
 				ctrl->status = FIMC_BUFFER_STOP;
@@ -898,6 +898,50 @@ static struct vm_operations_struct fimc_mmap_ops = {
 };
 
 static inline
+int fimc_mmap_own_mem(struct file *filp, struct vm_area_struct *vma)
+{
+	struct fimc_prv_data *prv_data =
+				(struct fimc_prv_data *)filp->private_data;
+	struct fimc_control *ctrl = prv_data->ctrl;
+	u32 start_phy_addr = 0;
+	u32 size = vma->vm_end - vma->vm_start;
+	u32 pfn, idx = vma->vm_pgoff;
+	u32 buf_length = 0;
+
+	buf_length = ctrl->mem.size;
+	if (size > PAGE_ALIGN(buf_length)) {
+		fimc_err("Requested mmap size is too big\n");
+		return -EINVAL;
+	}
+
+	start_phy_addr = ctrl->mem.base + (vma->vm_pgoff  << PAGE_SHIFT);
+
+	if (!cma_is_registered_region(start_phy_addr, size)) {
+		pr_err("[%s] handling non-cma region (%#x@%#x)is prohibited\n",
+				__func__, buf_length, start_phy_addr);
+		return -EINVAL;
+	}
+
+	/* only supports non-cached mmap */
+	vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
+	vma->vm_flags |= VM_RESERVED;
+
+	if ((vma->vm_flags & VM_WRITE) && !(vma->vm_flags & VM_SHARED)) {
+		fimc_err("writable mapping must be shared\n");
+		return -EINVAL;
+	}
+
+	pfn = __phys_to_pfn(start_phy_addr);
+
+	if (remap_pfn_range(vma, vma->vm_start, pfn, size, vma->vm_page_prot)) {
+		fimc_err("mmap fail\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static inline
 int fimc_mmap_out_src(struct file *filp, struct vm_area_struct *vma)
 {
 	struct fimc_prv_data *prv_data =
@@ -981,10 +1025,14 @@ static inline int fimc_mmap_out(struct file *filp, struct vm_area_struct *vma)
 	int idx = ctrl->out->ctx[ctx_id].overlay.req_idx;
 	int ret = -1;
 
+#if 0
 	if (idx >= 0)
 		ret = fimc_mmap_out_dst(filp, vma, idx);
 	else if (idx == FIMC_MMAP_IDX)
 		ret = fimc_mmap_out_src(filp, vma);
+#else
+	ret = fimc_mmap_own_mem(filp, vma);
+#endif
 
 	return ret;
 }
@@ -1001,6 +1049,12 @@ static inline int fimc_mmap_cap(struct file *filp, struct vm_area_struct *vma)
 		vma->vm_page_prot = pgprot_writecombine(vma->vm_page_prot);
 
 	vma->vm_flags |= VM_RESERVED;
+
+	if (!cma_is_registered_region(ctrl->cap->bufs[idx].base[0], size)) {
+		pr_err("[%s] handling non-cma region (%#x@%#x)is prohibited\n",
+				__func__, size, ctrl->cap->bufs[idx].base[0]);
+		return -EINVAL;
+	}
 
 	/*
 	 * page frame number of the address for a source frame
@@ -1159,7 +1213,7 @@ static int _fill_v4l2_buffer(struct vb2_buffer *vb, struct v4l2_buffer *b,
 		b->m.fd = vb->v4l2_planes[0].m.fd;
 	}
 
-	return 0;
+	return ret;
 }
 
 static int _fill_vb2_buffer(struct vb2_buffer *vb, struct v4l2_buffer *b,
@@ -1764,9 +1818,29 @@ static int fimc_release(struct file *filp)
 	return 0;
 }
 
+#ifdef CONFIG_USE_FIMC_CMA
+static int fimc_open_with_retry(struct file *filp)
+{
+	int ret;
+	int i = 0;
+
+	ret = fimc_open(filp);
+
+	while (ret == -ENOMEM && i++ < 5) {
+		msleep(1000);
+		ret = fimc_open(filp);
+	}
+
+	return ret;
+}
+#define FIMC_OPEN fimc_open_with_retry
+#else
+#define FIMC_OPEN fimc_open
+#endif
+
 static const struct v4l2_file_operations fimc_fops = {
 	.owner		= THIS_MODULE,
-	.open		= fimc_open,
+	.open		= FIMC_OPEN,
 	.release	= fimc_release,
 	.ioctl		= video_ioctl2,
 	.read		= fimc_read,

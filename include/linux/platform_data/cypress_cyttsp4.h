@@ -24,6 +24,13 @@
 
 #include <linux/types.h>
 
+enum {
+	GPIO_TOUCH_nINT = 0,
+	GPIO_TOUCH_EN,
+	GPIO_TOUCH_SCL,
+	GPIO_TOUCH_SDA
+};
+
 struct touch_settings {
 	const uint8_t   *data;
 	uint32_t         size;

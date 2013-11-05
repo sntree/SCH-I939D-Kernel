@@ -298,6 +298,12 @@ static int max17047_get_soc(struct i2c_client *client)
 	fullsoc = fg_data->full_soc - empty;
 	rawsoc -= empty;
 
+/* adjust fullsoc value for fast termination */
+#if defined(USE_2STEP_TERM) && !defined(CONFIG_TARGET_LOCALE_KOR)
+	fullsoc *= 99;
+	fullsoc /= 100;
+#endif
+
 	soc = fg_data->soc =
 		((rawsoc < empty) ? 0 : (min((rawsoc * 100 / fullsoc), 100)));
 

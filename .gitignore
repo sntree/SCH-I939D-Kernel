@@ -16,3 +16,8 @@
 *.exe
 *.out
 *.app
+.tmp_versions
+*.o.cmd
+*.builtin
+.*
+*.order

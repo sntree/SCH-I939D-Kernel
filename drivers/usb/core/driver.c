@@ -1425,7 +1425,7 @@ void usb_autosuspend_device(struct usb_device *udev)
 
 	usb_mark_last_busy(udev);
 	status = pm_runtime_put_sync_autosuspend(&udev->dev);
-	dev_err(&udev->dev, "%s: cnt %d -> %d\n",
+	dev_vdbg(&udev->dev, "%s: cnt %d -> %d\n",
 			__func__, atomic_read(&udev->dev.power.usage_count),
 			status);
 }

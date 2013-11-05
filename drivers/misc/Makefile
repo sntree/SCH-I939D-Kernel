@@ -88,3 +88,6 @@ obj-$(CONFIG_MACH_M0_DUOSCTC)   += cw_tty.o
 
 # Secure OS Mobicore Interface
 obj-$(CONFIG_MOBICORE_SUPPORT)  += tzic.o
+
+# Touchwake
+obj-$(CONFIG_TOUCH_WAKE)        += touch_wake.o

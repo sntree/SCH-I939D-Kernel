@@ -252,8 +252,11 @@ int parse_dataframe(struct ssp_data *data, char *pchRcvDataFrame, int iLength)
 #ifdef CONFIG_SENSORS_SSP_SENSORHUB
 		} else if (pchRcvDataFrame[iDataIdx] ==
 			MSG2AP_INST_LIBRARY_DATA) {
-			ssp_handle_sensorhub_data(data,
+			int ret = ssp_handle_sensorhub_data(data,
 					pchRcvDataFrame, iDataIdx, iLength);
+			if (ret < 0)
+				pr_err("%s: handle sensorhub data(%d) err(%d)",
+					__func__, iDataIdx, ret);
 			break;
 #endif
 		} else

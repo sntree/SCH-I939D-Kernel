@@ -709,6 +709,8 @@ static struct notifier_block exynos_cpufreq_policy_notifier = {
 
 static int exynos_cpufreq_cpu_init(struct cpufreq_policy *policy)
 {
+	int retval;
+
 	policy->cur = policy->min = policy->max = exynos_getspeed(policy->cpu);
 
 	cpufreq_frequency_table_get_attr(exynos_info->freq_table, policy->cpu);
@@ -729,7 +731,13 @@ static int exynos_cpufreq_cpu_init(struct cpufreq_policy *policy)
 		cpumask_setall(policy->cpus);
 	}
 
-	return cpufreq_frequency_table_cpuinfo(policy, exynos_info->freq_table);
+	retval = cpufreq_frequency_table_cpuinfo(policy, exynos_info->freq_table);
+
+	/* Keep stock frq. as default startup frq. */
+	policy->max = 1400000;
+	policy->min = 200000;
+
+	return retval;
 }
 
 static int exynos_cpufreq_reboot_notifier_call(struct notifier_block *this,
@@ -836,3 +844,76 @@ err_vdd_arm:
 	return -EINVAL;
 }
 late_initcall(exynos_cpufreq_init);
+
+/* sysfs interface for UV control */
+ssize_t show_UV_mV_table(struct cpufreq_policy *policy, char *buf) {
+
+  int i, len = 0;
+  if (buf)
+  {
+    for (i = exynos_info->max_support_idx; i<=exynos_info->min_support_idx; i++)
+    {
+      if(exynos_info->freq_table[i].frequency==CPUFREQ_ENTRY_INVALID) continue;
+      len += sprintf(buf + len, "%dmhz: %d mV\n", exynos_info->freq_table[i].frequency/1000,
+					((exynos_info->volt_table[i] % 1000) + exynos_info->volt_table[i])/1000);
+    }
+  }
+  return len;
+}
+
+ssize_t store_UV_mV_table(struct cpufreq_policy *policy,
+                                      const char *buf, size_t count) {
+
+	unsigned int ret = -EINVAL;
+   int i = 0;
+   int j = 0;
+	int u[15];
+   ret = sscanf(buf, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d", &u[0], &u[1], &u[2], &u[3], &u[4], &u[5], &u[6],
+															&u[7], &u[8], &u[9], &u[10], &u[11], &u[12], &u[13], &u[14]);
+	if(ret != 15) {
+		ret = sscanf(buf, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d", &u[0], &u[1], &u[2], &u[3], &u[4], &u[5], &u[6],
+															&u[7], &u[8], &u[9], &u[10], &u[11], &u[12], &u[13]);
+		if(ret != 14) {
+			ret = sscanf(buf, "%d %d %d %d %d %d %d %d %d %d %d %d %d", &u[0], &u[1], &u[2], &u[3], &u[4], &u[5], &u[6],
+															&u[7], &u[8], &u[9], &u[10], &u[11], &u[12]);
+			if( ret != 12)
+				return -EINVAL;
+		}
+	}
+
+	for( i = 0; i < 15; i++ )
+	{
+		u[i] *= 1000;
+		// round down voltages - thx to AndreiLux
+		if(u[i] % 12500)
+			u[i] = (u[i] / 12500) * 12500;
+
+		if (u[i] > CPU_UV_MV_MAX) {
+			u[i] = CPU_UV_MV_MAX;
+		}
+		else if (u[i] < CPU_UV_MV_MIN) {
+			u[i] = CPU_UV_MV_MIN;
+		}
+	}
+
+	for( i = 0; i < 15; i++ ) {
+		while(exynos_info->freq_table[i+j].frequency==CPUFREQ_ENTRY_INVALID)
+			j++;
+		exynos_info->volt_table[i+j] = u[i];
+	}
+	return count;
+}
+
+/* sysfs interface for ASV level */
+ssize_t show_asv_level(struct cpufreq_policy *policy, char *buf) {
+
+	return sprintf(buf, "ASV level: %d\n",exynos_result_of_asv); 
+
+}
+
+extern ssize_t store_asv_level(struct cpufreq_policy *policy,
+                                      const char *buf, size_t count) {
+	
+	// the store function does not do anything
+	return count;
+}

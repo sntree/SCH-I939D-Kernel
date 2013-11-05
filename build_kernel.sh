@@ -1,9 +1,11 @@
 #!/bin/sh
 export KERNELDIR=`readlink -f .`
-export RAMFS_SOURCE=`readlink -f $KERNELDIR/SCH-I939D-Ramfs`
+export RAMFS_SOURCE=`readlink -f $KERNELDIR/../SCH-I939D-Ramfs`
 export PARENT_DIR=`readlink -f ..`
 export USE_SEC_FIPS_MODE=true
-export CROSS_COMPILE=$PARENT_DIR/android_prebuilt/linux-x86/toolchain/arm-eabi-4.4.3/bin/arm-eabi-
+#export CROSS_COMPILE=$PARENT_DIR/android_prebuilt/linux-x86/toolchain/arm-eabi-4.4.3/bin/arm-eabi-
+export CROSS_COMPILE=/opt/toolchains/arm-eabi-4.7/bin/arm-eabi-
+
 
 if [ "${1}" != "" ];then
   export KERNELDIR=`readlink -f ${1}`
